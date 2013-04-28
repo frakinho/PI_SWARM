@@ -7,7 +7,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
+import java.util.Calendar;
+
+import config.config;
 
 import Entidades.caso;
 import Entidades.movimento;
@@ -19,7 +21,6 @@ public class Connect {
 	private Statement statement = null; // Restantes para a query
 	private PreparedStatement preparedStatement = null;
 	private ResultSet resultSet = null;
-	private static int tolerancia = 5;
 
 	// Construtor para ligar
 	public Connect() {
@@ -89,20 +90,26 @@ public class Connect {
 
 	public void addCaso(caso caso) {
 		// TODO Auto-generated method stub
-		/*
-		 * this.addMovimento(caso.getMovimento());
-		 * this.addParticle(caso.getParticula()); try { preparedStatement =
-		 * connect .prepareStatement(
-		 * "INSERT INTO SISwarm.CASO (id_PARTICLE,id_MOVIMENTO,id_PROBLEMA,SUCCESS) values (?,?,?,?)"
-		 * ); preparedStatement.setInt(1, caso.getParticula().getId());
-		 * System.out.println("Id da Particula: " +
-		 * caso.getParticula().getId()); preparedStatement.setInt(2,
-		 * caso.getMovimento().getId()); preparedStatement.setInt(3,
-		 * caso.getProblema().getId()); preparedStatement.setInt(4,
-		 * caso.getSucesso()); preparedStatement.executeUpdate();
-		 * System.out.println("CASO ADICIONADO COM SUCESSO"); } catch
-		 * (SQLException e) { e.printStackTrace(); } finally { // close(); }
-		 */
+
+		this.addMovimento(caso.getMovimento());
+		this.addParticle(caso.getParticula());
+		try {
+			preparedStatement = connect
+					.prepareStatement("INSERT INTO SISwarm.CASO (id_PARTICLE,id_MOVIMENTO,id_PROBLEMA,SUCCESS) values (?,?,?,?)");
+			preparedStatement.setInt(1, caso.getParticula().getId());
+			System.out.println("Id da Particula: "
+					+ caso.getParticula().getId());
+			preparedStatement.setInt(2, caso.getMovimento().getId());
+			preparedStatement.setInt(3, caso.getProblema().getId());
+			preparedStatement.setInt(4, caso.getSucesso());
+			preparedStatement.executeUpdate();
+			System.out.println("CASO ADICIONADO COM SUCESSO");
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally { // close();
+
+		}
+
 	}
 
 	public void addMovimento(movimento movimento) {
@@ -129,28 +136,29 @@ public class Connect {
 	}
 
 	// Actualiza movimento
-	public void updateMovimento(particle p) {
+	public particle updateMovimento(particle p, config config) {
+		particle nova = null;
 		try {
 			String query = "SELECT AVG(MOV.mov_x) mov_x,AVG(MOV.mov_y) mov_y "
 					+ "FROM MOVIMENTO MOV,CASO C,PARTICLE PAT "
 					+ "WHERE C.id_MOVIMENTO = MOV.id and C.id_PARTICLE = PAT.id and PAT.x > "
-					+ (p.getX() - tolerancia) + " and PAT.x < "
-					+ (p.getX() + tolerancia) + ";";
+					+ (p.getX() - config.getTolerancia()) + " and PAT.x < "
+					+ (p.getX() + config.getTolerancia()) + ";";
 
 			resultSet = statement.executeQuery(query);
 			double andaX = 0;
 			try {
 				while (resultSet.next()) {
 					andaX = Double.parseDouble(resultSet.getString("mov_x"));
-					andaX *= 3;
-					p.setX(((int) andaX) + p.getX());
+					andaX *= config.getVelocidade();
+					// p.setX(((int) andaX) + p.getX());
 				}
-
+				
 				String queryY = "SELECT AVG(MOV.mov_y) mov_y "
 						+ "FROM MOVIMENTO MOV,CASO C,PARTICLE PAT "
 						+ "WHERE C.id_MOVIMENTO = MOV.id and C.id_PARTICLE = PAT.id and PAT.y > "
-						+ (p.getY() - tolerancia) + " and PAT.y < "
-						+ (p.getY() + tolerancia) + ";";
+						+ (p.getY() - config.getTolerancia()) + " and PAT.y < "
+						+ (p.getY() + config.getTolerancia()) + ";";
 
 				resultSet = statement.executeQuery(queryY);
 
@@ -158,14 +166,25 @@ public class Connect {
 
 				while (resultSet.next()) {
 					andaY = Double.parseDouble(resultSet.getString("mov_y"));
-					andaY *= 3;
-					p.setY(((int) andaY) + p.getY());
+					andaY *= config.getVelocidade();
+					
+					// p.setY(((int) andaY) + p.getY());
 
 				}
 
-				caso caso = new caso(p, new problema(1, 0, 0, 0, 0),
-						new movimento((int) andaX, (int) andaY), 1);
-				addCaso(caso);
+
+				/*
+				if(p.getY() == 200 && p.getX() > 200 && p.getX() < 225) {
+					andaX -=4;
+					System.out.println("Aqui-------????********");
+				}*/
+
+				nova = new particle((int) andaX + p.getX(), (int) andaY
+						+ p.getY(), p.getType(), p.getImage(),
+						p.getDistCentro());
+
+				//caso caso = new caso(p, new problema(1, false, false,false, false), new movimento((int) andaX, (int) andaY), 1);
+				//addCaso(caso);
 			} catch (NullPointerException e) {
 				System.out.println("N‹o existe valor para esta posi‹o");
 			}
@@ -173,6 +192,8 @@ public class Connect {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return nova;
+
 	}
 
 	/*************************

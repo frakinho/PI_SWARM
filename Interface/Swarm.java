@@ -17,6 +17,10 @@ import javax.swing.JLabel;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 
+import config.config;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
+
 
 public class Swarm {
 
@@ -25,6 +29,8 @@ public class Swarm {
 	private JButton btnIniciar;
 	private Thread t;
 	private JButton btnNewButton;
+	private config config;
+	private JSlider slider;
 	/**
 	 * Launch the application.
 	 */
@@ -63,7 +69,9 @@ public class Swarm {
 		panel_1.setBorder(new TitledBorder(null, "Configura\u00E7\u00E3o", TitledBorder.LEADING, TitledBorder.TOP, null, null));
 		//DrawSwarm
 		try {
-			d = new DrawSwarm(400,400);
+			config = new config(3, 25, 10);
+			d = new DrawSwarm(config);
+
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -112,7 +120,6 @@ public class Swarm {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-							
 						}
 					}
 				});
@@ -131,9 +138,14 @@ public class Swarm {
 		
 		JLabel lblVelocidade = new JLabel("Velocidade");
 		
-		JSlider slider = new JSlider();
+		slider = new JSlider();
+		slider.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent arg0) {
+				config.setVelocidade(slider.getValue());
+			}
+		});
 		slider.setMaximum(5);
-		slider.setValue(0);
+		slider.setValue(1);
 		slider.setMajorTickSpacing(1);
 		slider.setMinorTickSpacing(1);
 		slider.setPaintTicks(true);
